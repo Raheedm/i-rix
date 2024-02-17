@@ -1,66 +1,90 @@
 const express = require('express');
-const bodyParser = require('body-parser');
+const multer = require('multer');
 const fs = require('fs');
 const nodemailer = require('nodemailer');
-
+const path = require('path');
 const app = express();
+const bodyParser = require('body-parser');
 const cors = require('cors');
+
+app.use(bodyParser.json());
 app.use(cors());
+app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
 
-app.use(bodyParser.json());
-
-// Create a Nodemailer transporter
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: 'rah004@chowgules.ac.in',
-    pass: 'Whoisthis@3',
+    pass: 'Whoisthis@3', 
   },
 });
 
-// Endpoint to handle team registration form submissions
-app.post('/api/teamregfile', (req, res) => {
-  try {
-    const teamData = req.body;
+const publicDirectoryPath = path.join(__dirname, 'public/uploads');
 
-    // Validate data (you can add more validation as needed)
-    if (!teamData.representativeName || !teamData.rollNumber || !teamData.year || !teamData.course || !teamData.totalTeamMembers) {
+if (!fs.existsSync(publicDirectoryPath)){
+    fs.mkdirSync(publicDirectoryPath);
+}
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, publicDirectoryPath);
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname);
+  },
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 1024 * 1024 * 5 // 5MB file size limit
+  }
+});
+
+app.post('/api/teamregfile', upload.single('idCardImage'), async (req, res) => {
+  try {
+    console.log('Request body:', req.body);
+    console.log('Request file:', req.file);
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, msg: 'No file uploaded' });
+    }
+
+    const { representativeName, rollNumber, year, course, totalTeamMembers } = req.body;
+    const { filename: idCardImageName, path: idCardImagePath } = req.file;
+
+    if (!representativeName || !rollNumber || !year || !course || !totalTeamMembers || !idCardImageName || !idCardImagePath) {
       return res.status(400).json({ success: false, msg: 'Incomplete team registration data' });
     }
 
-    // Format the data as needed
-    const formattedData = `Representative Name: ${teamData.representativeName}\nRoll Number: ${teamData.rollNumber}\nYear: ${teamData.year}\nCourse: ${teamData.course}\nTotal Team Members: ${teamData.totalTeamMembers}\n\n`;
+    const formattedData = `Representative Name: ${representativeName}\nRoll Number: ${rollNumber}\nYear: ${year}\nCourse: ${course}\nTotal Team Members: ${totalTeamMembers}\n\n`;
 
-    // Save the data to a file
     fs.appendFileSync('irix_reg.txt', formattedData);
 
-    // Send email notification
-    const mailOptions = {
-        from: 'rah004@chowgules.ac.in',
-        to: 'raheedmuzawar@gmail.com',
-        subject: 'New Team Registration IRIX 2024',
-        text: 'A new team has registered for IRIX',
-        attachments: [
-          {
-            filename: 'irix_reg.txt',
-            content: formattedData, // The content of the file
-          },
-        ],
-      };
-
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.error(error);
-        return res.status(500).json({ success: false, msg: 'Error sending email' });
-      }
-      
-      console.log('Email sent: ' + info.response);
-      res.status(200).json({ success: true, msg: 'Team registered successfully' });
+    console.log(`Sending email with attachments: ${formattedData}, ${idCardImagePath}`);
+    await transporter.sendMail({
+      from: 'rah004@chowgules.ac.in',
+      to: 'raheedmuzawar@gmail.com',
+      subject: 'New Team Registration IRIX 2024',
+      text: 'A new team has registered for IRIX',
+      attachments: [
+        { 
+          filename: 'irix_reg.txt',
+          content: formattedData, 
+        },
+        {
+          filename: idCardImageName,
+          path: idCardImagePath, 
+        },
+      ],
     });
+
+    console.log('Email sent successfully');
+    res.status(200).json({ success: true, msg: 'Team registered successfully' });
   } catch (error) {
-    console.error(error);
+    console.error('Error:', error);
     res.status(500).json({ success: false, msg: 'Internal server error' });
   }
 });

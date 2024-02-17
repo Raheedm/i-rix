@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { useInputState } from '../../hooks/useInputState';
 import { Container, Grid } from '@mui/material';
 import Input from '../../components/input';
 import Button from '../../components/button';
@@ -8,13 +7,14 @@ import { showToastTimer } from '../../redux/actions/toast';
 import Loader from '../../components/loader/index';
 
 function TeamRegistration() {
-  // States for storing team registration form data
-  const [representativeName, handleRepresentativeNameChange, resetRepresentativeName] = useInputState('');
-  const [rollNumber, handleRollNumberChange, resetRollNumber] = useInputState('');
-  const [year, handleYearChange, resetYear] = useInputState('');
-  const [course, handleCourseChange, resetCourse] = useInputState('');
-  const [totalTeamMembers, handleTotalTeamMembersChange, resetTotalTeamMembers] = useInputState('');
+  const [representativeName, setRepresentativeName] = useState('');
+  const [rollNumber, setRollNumber] = useState('');
+  const [year, setYear] = useState('');
+  const [course, setCourse] = useState('');
+  const [totalTeamMembers, setTotalTeamMembers] = useState('');
+  const [idCardImage, setIdCardImage] = useState(null);
   const [fakeLoading, setFakeLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false); // Track submission status
 
   const dispatch = useDispatch();
 
@@ -24,43 +24,50 @@ function TeamRegistration() {
     }, 2000);
   }, []);
 
-  // Team registration form submit handler
   const handleFormSubmit = async (event) => {
     event.preventDefault();
-    if (representativeName && rollNumber && year && course && totalTeamMembers) {
-      const teamData = {
-        representativeName,
-        rollNumber,
-        year,
-        course,
-        totalTeamMembers,
-      };
-
-    
-      const response = await fetch('http://localhost:5000/api/teamregfile', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(teamData),
-      });
-
-      const responseData = await response.json();
-      if (response.ok) {
-        resetForm(); // Reset form fields on successful registration
+  
+    if (representativeName && rollNumber && year && course && totalTeamMembers && idCardImage && !submitting) {
+      setSubmitting(true); // Disable submit button
+  
+      const formData = new FormData();
+      formData.append('representativeName', representativeName);
+      formData.append('rollNumber', rollNumber);
+      formData.append('year', year);
+      formData.append('course', course);
+      formData.append('totalTeamMembers', totalTeamMembers);
+      formData.append('idCardImage', idCardImage);
+  
+      try {
+        const response = await fetch('http://localhost:5000/api/teamregfile', {
+          method: 'POST',
+          body: formData,
+        });
+  
+        if (!response.ok) {
+          throw new Error('Failed to register team');
+        }
+  
+        // const responseData = await response.json();
+        resetForm();
         dispatch(showToastTimer('Team registered successfully', 'success'));
-      } else {
+      } catch (error) {
+        console.error('Error:', error);
         dispatch(showToastTimer('Error registering team', 'error'));
+      } finally {
+        setSubmitting(false); // Enable submit button
       }
     }
   };
+  
 
   const resetForm = () => {
-    resetRepresentativeName();
-    resetRollNumber();
-    resetYear();
-    resetCourse();
-    resetTotalTeamMembers();
+    setRepresentativeName('');
+    setRollNumber('');
+    setYear('');
+    setCourse('');
+    setTotalTeamMembers('');
+    setIdCardImage(null);
   };
 
   if (fakeLoading) {
@@ -68,17 +75,15 @@ function TeamRegistration() {
   } else {
     return (
       <Container>
-        <form onSubmit={handleFormSubmit}>
+        <form onSubmit={handleFormSubmit} encType="multipart/form-data">
           <Grid container spacing={{ lg: 10, xs: 4 }}>
-            {/* Input fields for team registration */}
-            {/* Add more fields as needed */}
             <Grid item lg={6} md={12} sm={12}>
               <Input
                 width="100%"
                 label="Representative Name"
                 placeholder="Representative Name"
                 value={representativeName}
-                onChange={(e) => handleRepresentativeNameChange(e)}
+                onChange={(e) => setRepresentativeName(e.target.value)}
               />
             </Grid>
             <Grid item lg={6} md={12} sm={12}>
@@ -87,7 +92,7 @@ function TeamRegistration() {
                 label="Roll Number"
                 placeholder="Roll Number"
                 value={rollNumber}
-                onChange={(e) => handleRollNumberChange(e)}
+                onChange={(e) => setRollNumber(e.target.value)}
               />
             </Grid>
             <Grid item lg={6} md={12} sm={12}>
@@ -96,7 +101,7 @@ function TeamRegistration() {
                 label="Year"
                 placeholder="Year"
                 value={year}
-                onChange={(e) => handleYearChange(e)}
+                onChange={(e) => setYear(e.target.value)}
               />
             </Grid>
             <Grid item lg={6} md={12} sm={12}>
@@ -105,7 +110,7 @@ function TeamRegistration() {
                 label="Course"
                 placeholder="Course"
                 value={course}
-                onChange={(e) => handleCourseChange(e)}
+                onChange={(e) => setCourse(e.target.value)}
               />
             </Grid>
             <Grid item lg={6} md={12} sm={12}>
@@ -114,7 +119,15 @@ function TeamRegistration() {
                 label="Total Team Members"
                 placeholder="Total Team Members"
                 value={totalTeamMembers}
-                onChange={(e) => handleTotalTeamMembersChange(e)}
+                onChange={(e) => setTotalTeamMembers(e.target.value)}
+              />
+            </Grid>
+            <Grid item lg={6} md={12} sm={12}>
+              <Input
+                width="100%"
+                type="file"
+                label="Upload ID Card Image"
+                onChange={(e) => setIdCardImage(e.target.files[0])}
               />
             </Grid>
           </Grid>

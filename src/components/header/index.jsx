@@ -7,7 +7,7 @@ import Toolbar from '@mui/material/Toolbar'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { Transition } from 'react-transition-group'
 import { Modal } from '@mui/material'
-import NavUreckon from '../../assets/IMGs/navbar-ureckon-logo.png'
+import IrixLogo from '../../assets/IrixBlueLogo.png'
 import Hamburger from '../../assets/IMGs/hamburger.png'
 import CloseIcon from '../../assets/IMGs/close.png'
 import './header.css'
@@ -38,10 +38,10 @@ const Header = ({
   const { userInfo } = useSelector((state) => state.userLogin)
   const { eventCategories } = useSelector((state) => state.eventCategory)
 
-  const logoutHandler = () => {
-    dispatch(userLogout())
-    navigate('/')
-  }
+  // const logoutHandler = () => {
+  //   dispatch(userLogout())
+  //   navigate('/')
+  // }
 
   useEffect(() => {
     dispatch(fetchCategory())
@@ -96,11 +96,11 @@ const Header = ({
                   Home
                 </a>
                 <DropDown eventCategories={eventCategories} />
-                <DropDown />
+                
                 <img
-                  src={NavUreckon}
-                  alt="ureckon-logo"
-                  style={{ marginLeft: '2rem', cursor: 'pointer' }}
+                  src={IrixLogo}
+                  alt="irix-logo"
+                  style={{ marginLeft: '2rem', cursor: 'pointer',width:'150px',paddingLeft:'20px',paddingRight:'20px',height:'50px' }}
                 />
                 <a href="/about" className="nav-font">
                   About Us
@@ -112,20 +112,12 @@ const Header = ({
                 >
                   Partners
                 </a>
-                {userInfo && (
+                {/* {userInfo && (
                   <div className="nav-font" onClick={logoutHandler}>
                     Logout
                   </div>
-                )}
-                <div
-                  className="nav-font"
-                  onClick={() => {
-                    handleOpen()
-                    setInProp(true)
-                  }}
-                >
-                  News
-                </div>
+                )} */}
+                
               </>
             ) : (
               <>
@@ -146,8 +138,8 @@ const Header = ({
                 )}
 
                 <img
-                  src={NavUreckon}
-                  alt="ureckon-logo"
+                  src={IrixLogo}
+                  alt="irix-logo"
                   style={{ marginLeft: '2rem', cursor: 'pointer' }}
                 />
               </>

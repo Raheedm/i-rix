@@ -44,12 +44,14 @@ const upload = multer({
 });
 //my build folder is in the root directory
 
+// Serve static files from the 'build' directory
 app.use(express.static(path.join(__dirname, 'build')));
 
+// Handle all other routes and serve 'index.html'
 app.get('/*', function (req, res) {
-  res.sendFile(path.join(__dirname, '..','..', 'build', 'index.html'));
-  console.log('the path is',path.join(__dirname, '..','..', 'build', 'index.html'));
+  res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
+
 
 
 app.post('/api/teamregfile', upload.single('idCardImage'), async (req, res) => {

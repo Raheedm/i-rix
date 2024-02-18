@@ -42,6 +42,15 @@ const upload = multer({
     fileSize: 1024 * 1024 * 5 // 5MB file size limit
   }
 });
+//my build folder is in the root directory
+
+app.use(express.static(path.join(__dirname, 'build')));
+
+app.get('/*', function (req, res) {
+  res.sendFile(path.join(__dirname, '..','..', 'build', 'index.html'));
+  console.log('the path is',path.join(__dirname, '..','..', 'build', 'index.html'));
+});
+
 
 app.post('/api/teamregfile', upload.single('idCardImage'), async (req, res) => {
   try {
